@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Sign Recognition - AI System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        h1 {
+            font-size: 26px;
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+        p.subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .status-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-ready {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid #22c55e;
+        }
+        .status-not-ready {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid #ef4444;
+        }
+        .upload-area {
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            background: #0f172a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            border-color: #38bdf8;
+            background: #16243b;
+        }
+        .upload-area input {
+            display: none;
+        }
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        .preview-container {
+            display: none;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .preview-image {
+            max-width: 180px;
+            max-height: 180px;
+            border-radius: 8px;
+            border: 2px solid #38bdf8;
+            object-fit: contain;
+        }
+        .btn-predict {
+            width: 100%;
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-predict:hover {
+            background-color: #7dd3fc;
+        }
+        .btn-predict:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+        }
+        .result-card {
+            display: none;
+            margin-top: 25px;
+            background: #0f172a;
+            border: 1px solid #38bdf8;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .result-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .sign-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4ade80;
+            margin-bottom: 6px;
+        }
+        .confidence-badge {
+            font-size: 14px;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+        .top3-heading {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border-top: 1px solid #1e293b;
+            padding-top: 10px;
+        }
+        .top3-item {
+            margin-bottom: 8px;
+        }
+        .top3-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .progress-bar-bg {
+            background-color: #1e293b;
+            border-radius: 6px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background-color: #38bdf8;
+            height: 100%;
+            border-radius: 6px;
+        }
+        .error-message {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        footer {
+            margin-top: 20px;
+            color: #64748b;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚦 Traffic Sign Recognition</h1>
+            <p class="subtitle">Deep Learning & CNN Classifier (GTSRB 43 Classes)</p>
+            {% if model_ready %}
+                <span class="status-badge status-ready">● Model Ready</span>
+            {% else %}
+                <span class="status-badge status-not-ready">⚠ Model Not Found (Run notebook first)</span>
+            {% endif %}
+        </header>
+
+        <!-- Upload Form -->
+        <form id="uploadForm">
+            <div class="upload-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div style="font-weight: bold; margin-bottom: 4px;">Click to Choose a Sign Image</div>
+                <div style="font-size: 12px; color: #94a3b8;">Supported formats: JPG, PNG, PPM</div>
+                <input type="file" id="fileInput" name="image" accept="image/*">
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <img id="previewImage" class="preview-image" alt="Selected Preview">
+            </div>
+
+            <button type="submit" class="btn-predict" id="predictBtn" disabled>Predict Traffic Sign</button>
+        </form>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- Result Box -->
+        <div class="result-card" id="resultCard">
+            <div class="result-title">Predicted Sign:</div>
+            <div class="sign-name" id="predictedSign">Speed Limit 50 km/h</div>
+            <div class="confidence-badge" id="confidenceBadge">Class ID: 2 | Confidence: 98.4%</div>
+
+            <div class="top3-heading">Top Predictions:</div>
+            <div id="top3List"></div>
+        </div>
+    </div>
+
+    <footer>
+        B.Tech Traffic Sign Recognition Project • Powered by TensorFlow & Flask
+    </footer>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const predictBtn = document.getElementById('predictBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const resultCard = document.getElementById('resultCard');
+        const errorMessage = document.getElementById('errorMessage');
+        const predictedSign = document.getElementById('predictedSign');
+        const confidenceBadge = document.getElementById('confidenceBadge');
+        const top3List = document.getElementById('top3List');
+
+        // Show Image Preview
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                    predictBtn.disabled = false;
+                    resultCard.style.display = 'none';
+                    errorMessage.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form Submit
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            predictBtn.disabled = true;
+            predictBtn.innerText = "Analyzing sign...";
+            errorMessage.style.display = 'none';
+            resultCard.style.display = 'none';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Failed to predict image.");
+                }
+
+                // Show prediction results
+                predictedSign.innerText = data.predicted_sign;
+                confidenceBadge.innerText = `Class ID: ${data.class_id} • Confidence: ${data.confidence}%`;
+
+                // Render Top-3
+                top3List.innerHTML = '';
+                data.top_3.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'top3-item';
+                    row.innerHTML = `
+                        <div class="top3-label">
+                            <span>${item.name}</span>
+                            <span>${item.score}%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: ${item.score}%"></div>
+                        </div>
+                    `;
+                    top3List.appendChild(row);
+                });
+
+                resultCard.style.display = 'block';
+            } catch (err) {
+                errorMessage.innerText = err.message;
+                errorMessage.style.display = 'block';
+            } finally {
+                predictBtn.disabled = false;
+                predictBtn.innerText = "Predict Traffic Sign";
+            }
+        });
+    </script>
+</body>
+</html>
